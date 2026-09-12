@@ -1,17 +1,15 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'skillbridge_secret_123', { expiresIn: '7d' });
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'skillbridge_super_jwt_secret_key_2026', { expiresIn: '7d' });
 };
 
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role, college, skills } = req.body;
-
-    console.log('Registration attempt:', { name, email, role });
-
     const userExists = await User.findOne({ email });
+
     if (userExists) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
@@ -33,8 +31,6 @@ exports.register = async (req, res) => {
       token: generateToken(user._id)
     });
   } catch (error) {
-    // 👇 This logs the exact error in your backend terminal
-    console.error('Registration Error Details:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -56,7 +52,6 @@ exports.login = async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error('Login Error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -69,3 +64,5 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getProfile = exports.getMe;
