@@ -1,59 +1,36 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    category: { type: String, required: true },
+    skills: [{ type: String, required: true }],
+    budget: { type: Number, required: true },
+    client: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: true 
     },
-
-    description: {
-      type: String,
-      required: true
+    status: { 
+      type: String, 
+      enum: ['open', 'in_progress', 'submitted', 'completed'], 
+      default: 'open' 
     },
-
-    category: {
-      type: String,
-      required: true
+    hiredFreelancer: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User', 
+      default: null 
     },
-
-    skills: {
-      type: [String],
-      default: []
-    },
-
-    budget: {
-      type: Number,
-      required: true
-    },
-
-    deadline: {
-      type: Date
-    },
-
-    client: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
-    },
-
-    hiredStudent: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null
-    },
-
-    status: {
-      type: String,
-      enum: ["open", "in-progress", "completed"],
-      default: "open"
+    // 👇 Project Delivery / Submission Details
+    submission: {
+      githubUrl: { type: String, default: '' },
+      liveUrl: { type: String, default: '' },
+      notes: { type: String, default: '' },
+      submittedAt: { type: Date, default: null }
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-const Job = mongoose.model("Job", jobSchema);
-
-export default Job;
+module.exports = mongoose.model('Job', jobSchema);

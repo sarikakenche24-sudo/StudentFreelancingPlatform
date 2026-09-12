@@ -1,48 +1,22 @@
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
 const protect = async (req, res, next) => {
-  try {
-    let token;
-
-    // Check Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'skillbridge_secret_123');
+      req.user = await User.findById(decoded.id).select('-password');
+      return next();
+    } catch (error) {
+      return res.status(401).json({ message: 'Token failed, not authorized' });
     }
+  }
 
-    // No token
-    if (!token) {
-      return res.status(401).json({
-        message: "Not authorized, no token",
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    // Find user
-    req.user = await User.findById(decoded.id).select("-password");
-
-    if (!req.user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
-    }
-
-    next();
-  } catch (error) {
-    console.error("AUTH ERROR:", error.message);
-
-    return res.status(401).json({
-      message: "Not authorized",
-    });
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided, not authorized' });
   }
 };
 
-export default protect;
+module.exports = { protect };

@@ -1,165 +1,118 @@
-import Job from "../models/Job.js";
+const Job = require('../models/Job');
 
-// ==========================================
-// CREATE JOB
-// POST /api/jobs
-// ==========================================
-const createJob = async (req, res) => {
+// Create a job (Client)
+exports.createJob = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      category,
-      skills,
-      budget,
-      deadline,
-    } = req.body;
-
-    // Check required fields
-    if (
-      !title ||
-      !description ||
-      !category ||
-      !skills ||
-      !Array.isArray(skills) ||
-      skills.length === 0 ||
-      budget === undefined ||
-      budget === null ||
-      !deadline
-    ) {
-      return res.status(400).json({
-        message: "Please fill all required fields",
-      });
-    }
-
-    // Check authentication
-    if (!req.user) {
-      return res.status(401).json({
-        message: "Not authorized",
-      });
-    }
-
-    // Create job
     const job = await Job.create({
-      title,
-      description,
-      category,
-      skills,
-      budget,
-      deadline,
-      client: req.user._id,
+      ...req.body,
+      client: req.user._id
     });
-
-    return res.status(201).json({
-      message: "Project created successfully",
-      job,
-    });
+    res.status(201).json(job);
   } catch (error) {
-    console.error("Create Job Error:", error);
-
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-
-// ==========================================
-// GET ALL JOBS
-// GET /api/jobs
-// ==========================================
-const getJobs = async (req, res) => {
+// Get all open jobs or filter by search keyword
+exports.getJobs = async (req, res) => {
   try {
-    const jobs = await Job.find()
-      .populate("client", "name email")
-      .sort({ createdAt: -1 });
+    const { keyword } = req.query;
+    let query = { status: 'open' };
 
-    return res.status(200).json({
-      count: jobs.length,
-      jobs,
-    });
+    if (keyword) {
+      query.title = { $regex: keyword, $options: 'i' };
+    }
+
+    const jobs = await Job.find(query).populate('client', 'name email');
+    res.json(jobs);
   } catch (error) {
-    console.error("Get Jobs Error:", error);
-
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-
-// ==========================================
-// GET SINGLE JOB
-// GET /api/jobs/:id
-// ==========================================
-const getJobById = async (req, res) => {
+// Get single job details
+exports.getJobById = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id)
-      .populate("client", "name email");
+    const job = await Job.findById(req.params.id).populate('client', 'name email');
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// @desc Freelancer submits completed project
+// @route PUT /api/jobs/:id/submit
+exports.submitProjectWork = async (req, res) => {
+  try {
+    const { githubUrl, liveUrl, notes } = req.body;
+    const job = await Job.findById(req.params.id);
 
     if (!job) {
-      return res.status(404).json({
-        message: "Job not found",
-      });
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    return res.status(200).json(job);
-  } catch (error) {
-    console.error("Get Job Error:", error);
+    // Ensure only the hired student can submit work
+    if (String(job.hiredFreelancer) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the assigned freelancer can submit work' });
+    }
 
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    job.submission = {
+      githubUrl,
+      liveUrl,
+      notes,
+      submittedAt: new Date()
+    };
+    job.status = 'submitted';
+
+    await job.save();
+    res.json({ message: 'Project work submitted successfully!', job });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-
-// ==========================================
-// DELETE JOB
-// DELETE /api/jobs/:id
-// ==========================================
-const deleteJob = async (req, res) => {
+// @desc Client approves submission & marks project completed
+// @route PUT /api/jobs/:id/complete
+exports.completeJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
 
     if (!job) {
-      return res.status(404).json({
-        message: "Job not found",
-      });
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check job owner
-    if (job.client.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        message: "You are not authorized to delete this job",
-      });
+    // Ensure only the job creator can mark complete
+    if (String(job.client) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the client can complete this project' });
     }
 
-    await job.deleteOne();
+    job.status = 'completed';
+    await job.save();
 
-    return res.status(200).json({
-      message: "Job deleted successfully",
-    });
+    res.json({ message: 'Project approved and marked completed!', job });
   } catch (error) {
-    console.error("Delete Job Error:", error);
-
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// @desc Get projects assigned to logged-in freelancer
+// @route GET /api/jobs/my-projects
+exports.getMyProjects = async (req, res) => {
+  try {
+    const jobs = await Job.find({ hiredFreelancer: req.user._id }).populate('client', 'name email');
+    res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-// ==========================================
-// EXPORT CONTROLLERS
-// ==========================================
-export {
-  createJob,
-  getJobs,
-  getJobById,
-  deleteJob,
+// @desc Get projects created by logged-in client
+// @route GET /api/jobs/client-projects
+exports.getClientProjects = async (req, res) => {
+  try {
+    const jobs = await Job.find({ client: req.user._id }).populate('hiredFreelancer', 'name email college');
+    res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

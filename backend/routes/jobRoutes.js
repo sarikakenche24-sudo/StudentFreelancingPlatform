@@ -1,152 +1,28 @@
-import express from "express";
-import Job from "../models/Job.js";
-import authMiddleware from "../middleware/authMiddleware.js";
-
+const express = require('express');
 const router = express.Router();
+const { 
+  createJob, 
+  getJobs, 
+  getJobById, 
+  submitProjectWork, 
+  completeJob,
+  getMyProjects,
+  getClientProjects
+} = require('../controllers/jobController');
+const { protect } = require('../middleware/authMiddleware');
 
+router.route('/')
+  .get(getJobs)
+  .post(protect, createJob);
 
-// =====================================================
-// CREATE JOB
-// POST /api/jobs
-// =====================================================
+// Dedicated user project listings
+router.get('/my-projects', protect, getMyProjects);
+router.get('/client-projects', protect, getClientProjects);
 
-router.post("/", authMiddleware, async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      budget,
-      skills,
-    } = req.body;
+// Submit and Complete routes
+router.put('/:id/submit', protect, submitProjectWork);
+router.put('/:id/complete', protect, completeJob);
 
-    if (!title || !description || budget === undefined) {
-      return res.status(400).json({
-        message: "Title, description and budget are required",
-      });
-    }
+router.route('/:id').get(getJobById);
 
-    // Only client can create jobs
-    if (req.user.role !== "client") {
-      return res.status(403).json({
-        message: "Only clients can create jobs",
-      });
-    }
-
-    const job = await Job.create({
-      title,
-      description,
-      budget,
-      skills: skills || [],
-      client: req.user._id,
-    });
-
-    res.status(201).json({
-      message: "Job created successfully",
-      job,
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
-  }
-});
-
-
-// =====================================================
-// GET ALL JOBS
-// GET /api/jobs
-// =====================================================
-
-router.get("/", async (req, res) => {
-  try {
-    const jobs = await Job.find()
-      .populate("client", "name email")
-      .populate("hiredStudent", "name email")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(jobs);
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
-  }
-});
-
-
-// =====================================================
-// STEP 45
-// COMPLETE JOB
-// PUT /api/jobs/:id/complete
-// =====================================================
-
-router.put(
-  "/:id/complete",
-  authMiddleware,
-  async (req, res) => {
-    try {
-      // Only clients
-      if (req.user.role !== "client") {
-        return res.status(403).json({
-          message: "Only clients can complete projects",
-        });
-      }
-
-      // Find job
-      const job =
-        await Job.findById(req.params.id);
-
-      if (!job) {
-        return res.status(404).json({
-          message: "Project not found",
-        });
-      }
-
-      // Check ownership
-      if (
-        job.client.toString() !==
-        req.user._id.toString()
-      ) {
-        return res.status(403).json({
-          message: "Not authorized",
-        });
-      }
-
-      // Check current status
-      if (job.status !== "in-progress") {
-        return res.status(400).json({
-          message:
-            "Only in-progress projects can be completed",
-        });
-      }
-
-      // Complete project
-      job.status = "completed";
-
-      await job.save();
-
-      res.status(200).json({
-        message: "Project completed successfully",
-        job,
-      });
-
-    } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        message: "Server error",
-        error: error.message,
-      });
-    }
-  }
-);
-
-
-export default router;
+module.exports = router;

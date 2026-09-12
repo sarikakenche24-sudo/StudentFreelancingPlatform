@@ -1,225 +1,73 @@
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import API from "../services/api.js";
-
-function Register() {
-  const navigate = useNavigate();
-
+const Register = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "student",
-    college: "",
-    course: "",
-    year: ""
+    name: '',
+    email: '',
+    password: '',
+    role: 'freelancer',
+    college: '',
+    skills: ''
   });
-
-  const [message, setMessage] = useState("");
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const [error, setError] = useState('');
+  const { register } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-
     try {
-      const response = await API.post(
-        "/auth/register",
-        formData
-      );
-
-      setMessage("Registration successful!");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 1000);
-
-    } catch (error) {
-      console.error(error);
-
-      setMessage(
-        error.response?.data?.message ||
-        "Registration failed. Please try again."
-      );
+      const payload = {
+        ...formData,
+        skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : []
+      };
+      await register(payload);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
     }
   };
 
   return (
-    <div className="auth-page">
-
-      <div className="auth-card register-card">
-
-        {/* Logo */}
-        <div className="auth-logo">
-          Skill<span>Bridge</span>
-        </div>
-
-        {/* Heading */}
-        <h1>Create Account</h1>
-
-        <p className="auth-subtitle">
-          Join SkillBridge and start building your career
-        </p>
-
+    <div className="container" style={{ maxWidth: '480px', marginTop: '2rem' }}>
+      <div className="card">
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Create an Account</h2>
+        {error && <p style={{ color: 'red', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
         <form onSubmit={handleSubmit}>
+          <label>Full Name</label>
+          <input className="input-field" type="text" required onChange={(e) => setFormData({...formData, name: e.target.value})} />
 
-          {/* Name */}
-          <div className="input-group">
-            <label>Full Name</label>
+          <label>Email</label>
+          <input className="input-field" type="email" required onChange={(e) => setFormData({...formData, email: e.target.value})} />
 
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your full name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <label>Password</label>
+          <input className="input-field" type="password" required onChange={(e) => setFormData({...formData, password: e.target.value})} />
 
-          {/* Email */}
-          <div className="input-group">
-            <label>Email Address</label>
+          <label>I want to:</label>
+          <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+            <option value="freelancer">Work as a Student Freelancer</option>
+            <option value="client">Hire Student Freelancers (Client)</option>
+          </select>
 
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div className="input-group">
-            <label>Password</label>
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* Role */}
-          <div className="input-group">
-            <label>Account Type</label>
-
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              <option value="student">
-                Student
-              </option>
-
-              <option value="client">
-                Client
-              </option>
-            </select>
-          </div>
-
-          {/* Student Details */}
-          {formData.role === "student" && (
+          {formData.role === 'freelancer' && (
             <>
-              <div className="input-group">
-                <label>College</label>
+              <label>College / University</label>
+              <input className="input-field" type="text" onChange={(e) => setFormData({...formData, college: e.target.value})} />
 
-                <input
-                  type="text"
-                  name="college"
-                  placeholder="Enter your college"
-                  value={formData.college}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Course</label>
-
-                <input
-                  type="text"
-                  name="course"
-                  placeholder="Example: B.Tech CSE"
-                  value={formData.course}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Year</label>
-
-                <select
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                >
-                  <option value="">
-                    Select Year
-                  </option>
-
-                  <option value="1st Year">
-                    1st Year
-                  </option>
-
-                  <option value="2nd Year">
-                    2nd Year
-                  </option>
-
-                  <option value="3rd Year">
-                    3rd Year
-                  </option>
-
-                  <option value="4th Year">
-                    4th Year
-                  </option>
-                </select>
-              </div>
+              <label>Skills (comma separated, e.g. React, Python, UI/UX)</label>
+              <input className="input-field" type="text" onChange={(e) => setFormData({...formData, skills: e.target.value})} />
             </>
           )}
 
-          {/* Register Button */}
-          <button
-            type="submit"
-            className="auth-button"
-          >
-            Create Account
-          </button>
-
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Register</button>
         </form>
-
-        {/* Message */}
-        {message && (
-          <p className="auth-message">
-            {message}
-          </p>
-        )}
-
-        {/* Login Link */}
-        <div className="auth-footer">
-          Already have an account?{" "}
-          <Link to="/login">
-            Login
-          </Link>
-        </div>
-
+        <p style={{ marginTop: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
       </div>
-
     </div>
   );
-}
+};
 
 export default Register;
-
