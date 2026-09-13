@@ -1,4 +1,9 @@
-﻿const User = require('../models/User');
+﻿let User;
+try {
+  User = require('../models/User');
+} catch (e) {
+  User = require('../models/user');
+}
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
