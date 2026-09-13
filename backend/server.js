@@ -9,7 +9,7 @@ connectDB();
 
 const app = express();
 
-// 1. Enable CORS for all domains, methods, and headers
+// Enable CORS for all domains, methods, and headers
 app.use(
   cors({
     origin: '*',
@@ -17,9 +17,6 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
-
-// 2. Explicitly handle browser preflight OPTIONS requests
-app.options('*', cors());
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -29,7 +26,7 @@ app.get('/', (req, res) => {
   res.send('SkillBridge API is running...');
 });
 
-// Mount Routes
+// Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/proposals', require('./routes/proposalRoutes'));
