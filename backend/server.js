@@ -9,23 +9,33 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// 1. Enable CORS for all domains, methods, and headers
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
-// Make uploaded files accessible via URL: http://localhost:5000/uploads/filename
+// 2. Explicitly handle browser preflight OPTIONS requests
+app.options('*', cors());
+
+app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// Test Route
 app.get('/', (req, res) => {
   res.send('SkillBridge API is running...');
 });
 
+// Mount Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/proposals', require('./routes/proposalRoutes'));
-app.use('/api/projects', require('./routes/projectRoutes')); // 👈 Project Upload Route
+app.use('/api/projects', require('./routes/projectRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
