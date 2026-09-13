@@ -1,12 +1,12 @@
 ﻿import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
-import Navbar from './components/Navbar'; // 👈 Uppercase N
+import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import BrowseJobs from './pages/BrowseJobs';
-import PostJob from './pages/PostJob'; // 👈 Uppercase P
+import PostJob from './pages/PostJob';
 import Dashboard from './pages/Dashboard';
 import UploadProject from './pages/UploadProject';
 import Portfolio from './pages/Portfolio';
@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/StudentFreelancingPlatform">
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
