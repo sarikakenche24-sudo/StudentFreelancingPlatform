@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
@@ -13,12 +13,13 @@ const userSchema = new mongoose.Schema(
     },
     college: { type: String, default: '' },
     skills: [{ type: String }],
-    rating: { type: Number, default: 0 }
+    rating: { type: Number, default: 0 },
+    collegeIdCard: { type: String, default: '' },
+    isVerified: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
 
-// Modern async pre-save hook (no 'next' parameter needed)
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);

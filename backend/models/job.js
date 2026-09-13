@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema(
   {
@@ -22,7 +22,6 @@ const jobSchema = new mongoose.Schema(
       ref: 'User', 
       default: null 
     },
-    // 👇 Project Delivery / Submission Details
     submission: {
       githubUrl: { type: String, default: '' },
       liveUrl: { type: String, default: '' },
