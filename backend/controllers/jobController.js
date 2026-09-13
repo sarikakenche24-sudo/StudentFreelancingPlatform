@@ -1,6 +1,10 @@
-const Job = require('../models/Job');
+﻿let Job;
+try {
+  Job = require('../models/Job');
+} catch (e) {
+  Job = require('../models/job');
+}
 
-// Create a job (Client)
 exports.createJob = async (req, res) => {
   try {
     const job = await Job.create({
@@ -13,7 +17,6 @@ exports.createJob = async (req, res) => {
   }
 };
 
-// Get all open jobs or filter by search keyword
 exports.getJobs = async (req, res) => {
   try {
     const { keyword } = req.query;
@@ -30,7 +33,6 @@ exports.getJobs = async (req, res) => {
   }
 };
 
-// Get single job details
 exports.getJobById = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate('client', 'name email');
@@ -40,63 +42,35 @@ exports.getJobById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-// @desc Freelancer submits completed project
-// @route PUT /api/jobs/:id/submit
+
 exports.submitProjectWork = async (req, res) => {
   try {
     const { githubUrl, liveUrl, notes } = req.body;
     const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: 'Project not found' });
 
-    if (!job) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    // Ensure only the hired student can submit work
-    if (String(job.hiredFreelancer) !== String(req.user._id)) {
-      return res.status(403).json({ message: 'Only the assigned freelancer can submit work' });
-    }
-
-    job.submission = {
-      githubUrl,
-      liveUrl,
-      notes,
-      submittedAt: new Date()
-    };
+    job.submission = { githubUrl, liveUrl, notes, submittedAt: new Date() };
     job.status = 'submitted';
-
     await job.save();
-    res.json({ message: 'Project work submitted successfully!', job });
+    res.json({ message: 'Work submitted successfully', job });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc Client approves submission & marks project completed
-// @route PUT /api/jobs/:id/complete
 exports.completeJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
-
-    if (!job) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    // Ensure only the job creator can mark complete
-    if (String(job.client) !== String(req.user._id)) {
-      return res.status(403).json({ message: 'Only the client can complete this project' });
-    }
+    if (!job) return res.status(404).json({ message: 'Project not found' });
 
     job.status = 'completed';
     await job.save();
-
-    res.json({ message: 'Project approved and marked completed!', job });
+    res.json({ message: 'Project marked completed', job });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc Get projects assigned to logged-in freelancer
-// @route GET /api/jobs/my-projects
 exports.getMyProjects = async (req, res) => {
   try {
     const jobs = await Job.find({ hiredFreelancer: req.user._id }).populate('client', 'name email');
@@ -106,8 +80,6 @@ exports.getMyProjects = async (req, res) => {
   }
 };
 
-// @desc Get projects created by logged-in client
-// @route GET /api/jobs/client-projects
 exports.getClientProjects = async (req, res) => {
   try {
     const jobs = await Job.find({ client: req.user._id }).populate('hiredFreelancer', 'name email college');

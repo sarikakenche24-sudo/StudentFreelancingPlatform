@@ -1,9 +1,13 @@
-const Proposal = require('../models/Proposal');
+﻿let Proposal;
+try {
+  Proposal = require('../models/Proposal');
+} catch (e) {
+  Proposal = require('../models/proposal');
+}
 
 exports.submitProposal = async (req, res) => {
   try {
     const { jobId, coverLetter, bidAmount, deliveryDays } = req.body;
-    
     const existing = await Proposal.findOne({ job: jobId, freelancer: req.user._id });
     if (existing) {
       return res.status(400).json({ message: 'You have already applied to this project' });
