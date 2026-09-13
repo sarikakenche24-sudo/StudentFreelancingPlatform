@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  // 👇 PASTE YOUR RENDER URL HERE (keep /api at the end)
+  baseURL: ' https://studentfreelancingplatform.onrender.com',
 });
 
-// Attach token to headers if available
+// Automatically attaches login token to every request
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
   if (token) {
